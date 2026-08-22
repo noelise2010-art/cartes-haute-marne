@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartes postales A6 de la Haute-Marne</title>
+    <style>
+        /* RESET & GLOBAL */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            height: 100vh;
+            background: #e9ecef;
+        }
+
+        /* ===== COLONNE GAUCHE (VILLAGES) - largeur fixe ===== */
+        #sidebar {
+            width: 280px;
+            background: #1e2a3a;
+            color: #f8f9fa;
+            padding: 20px 15px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 3px solid #0d6efd;
+        }
+        #sidebar h2 {
+            text-align: center;
+            font-size: 1.4rem;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        #sidebar ul {
+            list-style: none;
+        }
+        #sidebar li {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            border-left: 3px solid transparent;
+        }
+        #sidebar li:hover {
+            background: #2c3e5a;
+            border-left-color: #0d6efd;
+        }
+        #sidebar li.active {
+            background: #0d6efd;
+            font-weight: bold;
+            border-left-color: #fff;
+        }
+
+        /* ===== COLONNE DROITE (CONTENU) ===== */
+        #content {
+            flex: 1;
+            padding: 30px 40px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        #selected-title {
+            color: #1e2a3a;
+            font-weight: 600;
+            font-size: 1.8rem;
+            border-bottom: 4px solid #0d6efd;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== GRILLE DES VIGNETTES (DIMENSIONS FIXES EN PIXELS) ===== */
+        #gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px 25px;
+            justify-content: flex-start;
+        }
+
+        /* Chaque carte postale fait EXACTEMENT 160px × 226px (ratio A6) */
+        .card-item {
+            width: 160px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            overflow: hidden;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .card-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+        }
+
+        .card-item img {
+            width: 160px;
+            height: 226px;
+            object-fit: contain;
+            background-color: #f0f2f5;
+            display: block;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-item figcaption {
+            padding: 10px 6px;
+            font-size: 0.82rem;
+            color: #2b2d42;
+            background: #fff;
+            font-style: italic;
+            font-weight: 500;
+            line-height: 1.3;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+        }
+
+        /* Message "aucune carte" */
+        .empty-message {
+            width: 100%;
+            text-align: center;
+            color: #6c757d;
+            font-size: 1.3rem;
+            margin-top: 50px;
+            padding: 40px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 2px dashed #dee2e6;
+        }
+
+        /* ===== MODALE (AFFICHAGE A6 EN GRAND) ===== */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        #modal-content {
+            width: 600px;
+            height: 848px;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px 25px 20px 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        #modal-content img {
+            width: 100%;
+            height: calc(100% - 70px);
+            object-fit: contain;
+            background-color: #f0f2f5;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        #modal-content .modal-legend {
+            margin-top: 14px;
+            font-size: 1.2rem;
+            color: #1e2a3a;
+            font-weight: 500;
+            text-align: center;
+            max-width: 90%;
+            font-style: italic;
+        }
+
+        #modal-close {
+            margin-top: 12px;
+            padding: 10px 40px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: 1px;
+        }
+        #modal-close:hover {
+            background: #b02a37;
+            transform: scale(1.03);
+        }
+
+        @media (max-width: 720px) {
+            #modal-content {
+                width: 92vw;
+                height: calc(92vw * 1.414);
+                padding: 15px;
+            }
+            #modal-content img {
+                height: calc(100% - 65px);
+            }
+            #modal-content .modal-legend {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 650px) {
+            body {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 3px solid #0d6efd;
+            }
+            #content {
+                height: 60vh;
+                padding: 20px;
+            }
+            #gallery {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR GAUCHE -->
+    <div id="sidebar">
+        <h2>🏘️ Villages</h2>
+        <ul id="village-list"></ul>
+    </div>
+
+    <!-- CONTENU DROIT -->
+    <div id="content">
+        <h2 id="selected-title">📮 Sélectionnez un village</h2>
+        <div id="gallery"></div>
+    </div>
+
+    <!-- MODALE -->
+    <div id="modal">
+        <div id="modal-content">
+            <img id="modal-image" src="" alt="Carte postale A6">
+            <figcaption class="modal-legend" id="modal-legend">Légende</figcaption>
+            <button id="modal-close">✕ Fermer</button>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================================
+        // 1. LISTE COMPLÈTE DES 441 COMMUNES (intégrée depuis votre CSV)
+        // ==============================================================
+        const allVillageNames = [
+            "Ageville", "Aigremont", "Aillianville", "Aingoulaincourt", "Aizanville",
+            "Allichamps", "Ambonville", "Andelot-Blancheville", "Andilly-en-Bassigny",
+            "Annonville", "Annéville-la-Prairie", "Anrosey", "Aprey", "Arbigny-sous-Varennes",
+            "Arbot", "Arc-en-Barrois", "Arnancourt", "Attancourt", "Aubepierre-sur-Aube",
+            "Auberive", "Audeloncourt", "Aujeurres", "Aulnoy-sur-Aube", "Autigny-le-Grand",
+            "Autigny-le-Petit", "Autreville-sur-la-Renne", "Avrecourt", "Bailly-aux-Forges",
+            "Baissey", "Bannes", "Bassoncourt", "Baudrecourt", "Bay-sur-Aube",
+            "Bayard-sur-Marne", "Beauchemin", "Belmont", "Bettancourt-la-Ferrée",
+            "Beurville", "Biesles", "Bize", "Blaisy", "Blessonville", "Blumeray",
+            "Blécourt", "Bologne", "Bonnecourt", "Bourbonne-les-Bains", "Bourdons-sur-Rognon",
+            "Bourg", "Bourg-Sainte-Marie", "Bourmont-entre-Meuse-et-Mouzon", "Bouzancourt",
+            "Brachay", "Brainville-sur-Meuse", "Braux-le-Châtel", "Brennes", "Brethenay",
+            "Breuvannes-en-Bassigny", "Briaucourt", "Bricon", "Brousseval", "Bugnières",
+            "Busson", "Buxières-lès-Clefmont", "Buxières-lès-Villiers", "Ceffonds",
+            "Celles-en-Bassigny", "Celsoy", "Cerisières", "Chalancey", "Chalindrey",
+            "Chalvraines", "Chamarandes-Choignes", "Chambroncourt", "Chamouilley",
+            "Champigneulles-en-Bassigny", "Champigny-lès-Langres", "Champigny-sous-Varennes",
+            "Champsevraine", "Chancenay", "Changey", "Chanoy", "Chantraines", "Charmes",
+            "Charmes-en-l'Angle", "Charmes-la-Grande", "Chassigny", "Chatenay-Mâcheron",
+            "Chatenay-Vaudin", "Chatonrupt-Sommermont", "Chaudenay", "Chauffourt",
+            "Chaumont", "Chaumont-la-Ville", "Chevillon", "Choilley-Dardenay",
+            "Choiseul", "Courcelles-en-Montagne", "Courcelles-sur-Blaise",
+            "Cour-l'Évêque", "Culmont", "Curel", "Curmont", "Cusey", "Cuves",
+            "Daillancourt", "Daillecourt", "Dammartin-sur-Meuse", "Dampierre",
+            "Damrémont", "Dancevoir", "Darmannes", "Dinteville", "Domblain",
+            "Dommarien", "Dommartin-le-Franc", "Dommartin-le-Saint-Père",
+            "Domremy-Landéville", "Doncourt-sur-Meuse", "Donjeux",
+            "Doulaincourt-Saucourt", "Doulevant-le-Château", "Doulevant-le-Petit",
+            "Échenay", "Éclaron-Braucourt-Sainte-Livière", "Écot-la-Combe",
+            "Effincourt", "Enfonvelle", "Épizon", "Esnouveaux", "Euffigneix",
+            "Eurville-Bienville", "Farincourt", "Faverolles", "Fayl-Billot",
+            "Fays", "Ferrière-et-Lafolie", "Flagey", "Flammerécourt",
+            "Fontaines-sur-Marne", "Forcey", "Foulain", "Frampas",
+            "Fresnes-sur-Apance", "Frécourt", "Froncles", "Fronville",
+            "Genevrières", "La Genevroye", "Germaines", "Germainvilliers",
+            "Germay", "Germisay", "Giey-sur-Aujon", "Gillancourt", "Gillaumé",
+            "Gilley", "Graffigny-Chemin", "Grandchamp", "Grenant",
+            "Gudmont-Villiers", "Guindrecourt-aux-Ormes", "Guindrecourt-sur-Blaise",
+            "Guyonvelle", "Hâcourt", "Hallignicourt", "Harréville-les-Chanteurs",
+            "Haute-Amance", "Heuilley-le-Grand", "Huilliécourt", "Humberville",
+            "Humbécourt", "Humes-Jorquenay", "Illoud", "Is-en-Bassigny",
+            "Isômes", "Joinville", "Jonchery", "Juzennecourt",
+            "Lachapelle-en-Blaisy", "Lafauche", "Laferté-sur-Amance",
+            "Laferté-sur-Aube", "Lamancine", "Laneuvelle", "Laneuville-à-Rémy",
+            "Laneuville-au-Pont", "Langres", "Lanques-sur-Rognon",
+            "Lanty-sur-Aube", "Larivière-Arnoncourt", "Latrecey-Ormoy-sur-Aube",
+            "Lavernoy", "Laville-aux-Bois", "Lavilleneuve", "Lavilleneuve-au-Roi",
+            "Lecey", "Le Châtelet-sur-Meuse", "Leffonds",
+            "Leschères-sur-le-Blaiseron", "Leuchey", "Leurville", "Levécourt",
+            "Le Val-d'Esnoms", "Lezéville", "Liffol-le-Petit", "Les Loges",
+            "Longchamp", "Longeau-Percey", "Louvemont", "Louvières",
+            "Luzy-sur-Marne", "Maâtz", "Magneux", "Maisoncelles", "Maizières",
+            "Maizières-sur-Amance", "Malaincourt-sur-Meuse", "Mandres-la-Côte",
+            "Manois", "Marac", "Maranville", "Marbéville", "Marcilly-en-Bassigny",
+            "Mardor", "Mareilles", "Marnay-sur-Marne", "Mathons", "Melay",
+            "Mennouveaux", "Merrey", "Mertrud", "Meures", "Millières",
+            "Mirbel", "Moëslains", "Montcharvot", "Montheries",
+            "Montot-sur-Rognon", "Montreuil-sur-Blaise", "Montreuil-sur-Thonnance",
+            "Le Montsaugeonnais", "Morancourt", "Morionvilliers", "Mouilleron",
+            "Mussey-sur-Marne", "Narcy", "Neuilly-l'Évêque", "Neuilly-sur-Suize",
+            "Neuvelle-lès-Voisey", "Ninville", "Nogent", "Noidant-Chatenoy",
+            "Noidant-le-Rocheux", "Nomécourt", "Noncourt-sur-le-Rongeant",
+            "Noyers", "Nully", "Occey", "Orbigny-au-Mont", "Orbigny-au-Val",
+            "Orcevaux", "Orges", "Ormancey", "Ormoy-lès-Sexfontaines",
+            "Orquevaux", "Osne-le-Val", "Oudincourt", "Outremécourt",
+            "Ozières", "Le Pailly", "Palaiseul", "Pansey", "Parnoy-en-Bassigny",
+            "Paroy-sur-Saulx", "Peigney", "Perrancey-les-Vieux-Moulins",
+            "Perrogney-les-Fontaines", "Perrusse", "Perthes",
+            "Pierremont-sur-Amance", "Pisseloup", "Planrupt", "Plesnoy",
+            "Poinsenot", "Poinson-lès-Fayl", "Poinson-lès-Grancey",
+            "Poinson-lès-Nogent", "Poiseul", "Poissons", "Pont-la-Ville",
+            "La Porte du Der", "Poulangy", "Praslay", "Pressigny",
+            "Prez-sous-Lafauche", "Rachecourt-sur-Marne", "Rachecourt-Suzémont",
+            "Rançonnières", "Rangecourt", "Rennepont", "Reynel", "Riaucourt",
+            "Richebourg", "Rimaucourt", "Rives Dervoises", "Rivière-les-Fosses",
+            "Rivières-le-Bois", "Rizaucourt-Buchey", "Roches-Bettaincourt",
+            "Roches-sur-Marne", "Rochetaillée", "Rolampont", "Romain-sur-Meuse",
+            "Rouécourt", "Rouelles", "Rougeux", "Rouvres-sur-Aube",
+            "Rouvroy-sur-Marne", "Rupt", "Sailly", "Saint-Blin",
+            "Saint-Broingt-le-Bois", "Saint-Broingt-les-Fosses", "Saint-Ciergues",
+            "Saint-Dizier", "Saint-Loup-sur-Aujon", "Saint-Martin-lès-Langres",
+            "Saint-Maurice", "Saint-Thiébault", "Saint-Urbain-Maconcourt",
+            "Saint-Vallier-sur-Marne", "Saints-Geosmes", "Sarcey", "Sarrey",
+            "Saudron", "Saulles", "Saulxures", "Savigny", "Semilly",
+            "Semoutiers-Montsaon", "Serqueux", "Sexfontaines", "Signéville",
+            "Silvarouvres", "Sommancourt", "Sommerécourt", "Sommevoire",
+            "Soncourt-sur-Marne", "Soulaucourt-sur-Mouzon", "Soyers",
+            "Suzannecourt", "Ternat", "Thilleux", "Thivet",
+            "Thol-lès-Millières", "Thonnance-lès-Joinville", "Thonnance-les-Moulins",
+            "Torcenay", "Tornay", "Treix", "Troisfontaines-la-Ville",
+            "Trémilly", "Vaillant", "Valcourt", "Val-de-Meuse",
+            "Vals-des-Tilles", "Valleret", "Valleroy", "Varennes-sur-Amance",
+            "Vaudrecourt", "Vaudrémont", "Vauxbons", "Vaux-sur-Blaise",
+            "Vaux-sur-Saint-Urbain", "Vecqueville", "Velles", "Verbiesles",
+            "Verseilles-le-Bas", "Verseilles-le-Haut", "Vesaignes-sous-Lafauche",
+            "Vesaignes-sur-Marne", "Vesvres-sous-Chalancey", "Vicq",
+            "Viéville", "Vignes-la-Côte", "Vignory", "Villars-en-Azois",
+            "Villars-Santenoge", "Ville-en-Blaisois", "Villegusien-le-Lac",
+            "Villiers-en-Lieu", "Villiers-le-Sec", "Villiers-lès-Aprey",
+            "Villiers-sur-Suize", "Violot", "Vitry-en-Montagne",
+            "Vitry-lès-Nogent", "Vivey", "Voillecomte", "Voisey",
+            "Voisines", "Voncourt", "Vouécourt", "Vraincourt",
+            "Vroncourt-la-Côte", "Wassy"
+        ];
+
+        // ==============================================================
+        // 2. CARTES D'EXEMPLE (pour 4 villages tests)
+        // ==============================================================
+        const defaultCardsMap = {
+            "Langres": [
+                { "src": "https://via.placeholder.com/400x566/1abc9c/fff?text=Langres+-+Porte+des+Moulins", "legend": "Porte des Moulins, début XXe" },
+                { "src": "https://via.placeholder.com/400x566/3498db/fff?text=Langres+-+Cathédrale", "legend": "Cathédrale Saint-Mammès" }
+            ],
+            "Chaumont": [
+                { "src": "https://via.placeholder.com/400x566/e74c3c/fff?text=Chaumont+-+Viaduc", "legend": "Le Viaduc de Chaumont" },
+                { "src": "https://via.placeholder.com/400x566/f39c12/fff?text=Chaumont+-+Place+Crèvecoeur", "legend": "Place Crèvecoeur, années 1930" }
+            ],
+            "Joinville": [
+                { "src": "https://via.placeholder.com/400x566/9b59b6/fff?text=Joinville+-+Château", "legend": "Château du Grand Jardin" }
+            ],
+            "Saint-Dizier": [
+                { "src": "https://via.placeholder.com/400x566/34495e/fff?text=Saint-Dizier+-+Bassin", "legend": "Le bassin de la Marne" }
+            ]
+        };
+
+        // ==============================================================
+        // 3. CONSTRUCTION DE LA BASE DE DONNÉES FINALE
+        // ==============================================================
+        const data = {
+            "villages": allVillageNames.map(name => {
+                return {
+                    "name": name,
+                    "cards": defaultCardsMap[name] || []
+                };
+            })
+        };
+
+        // ==============================================================
+        // 4. RÉFÉRENCES DOM & LOGIQUE D'AFFICHAGE
+        // ==============================================================
+        const villageList = document.getElementById('village-list');
+        const gallery = document.getElementById('gallery');
+        const selectedTitle = document.getElementById('selected-title');
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modal-image');
+        const modalLegend = document.getElementById('modal-legend');
+        const modalClose = document.getElementById('modal-close');
+
+        // Remplir la sidebar
+        data.villages.forEach(village => {
+            const li = document.createElement('li');
+            li.textContent = village.name;
+            li.dataset.village = village.name;
+            li.addEventListener('click', () => loadVillage(village.name));
+            villageList.appendChild(li);
+        });
+
+        // Chargement d'un village
+        function loadVillage(villageName) {
+            selectedTitle.textContent = `📮 Cartes de ${villageName}`;
+
+            document.querySelectorAll('#village-list li').forEach(el => el.classList.remove('active'));
+            document.querySelector(`#village-list li[data-village="${villageName}"]`)?.classList.add('active');
+
+            const village = data.villages.find(v => v.name === villageName);
+            if (!village) return;
+
+            gallery.innerHTML = '';
+
+            // Si le village n'a pas de cartes
+            if (village.cards.length === 0) {
+                gallery.innerHTML = `<div class="empty-message">📭 Aucune carte postale pour ce village pour le moment.</div>`;
+                return;
+            }
+
+            // Génère les vignettes
+            village.cards.forEach(card => {
+                const figure = document.createElement('figure');
+                figure.className = 'card-item';
+
+                const img = document.createElement('img');
+                img.src = card.src;
+                img.alt = card.legend;
+                img.loading = 'lazy';
+
+                const figcap = document.createElement('figcaption');
+                figcap.textContent = card.legend;
+
+                figure.appendChild(img);
+                figure.appendChild(figcap);
+
+                figure.addEventListener('click', () => openModal(card.src, card.legend));
+
+                gallery.appendChild(figure);
+            });
+        }
+
+        // Modale
+        function openModal(src, legend) {
+            modalImage.src = src;
+            modalLegend.textContent = legend;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        modalClose.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Chargement par défaut (premier village : Ageville)
+        if (data.villages.length > 0) {
+            loadVillage(data.villages[0].name);
+        }
+    </script>
+</body>
+</html>
