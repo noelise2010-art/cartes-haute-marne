@@ -1,0 +1,22 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "villages"
+    label: "Villages"
+    folder: "data/villages"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Nom du village", name: "name", widget: "string" }
+      - label: "Cartes postales"
+        name: "cards"
+        widget: "list"
+        summary: "{{fields.legend}}"
+        fields:
+          - { label: "Image", name: "image", widget: "image" }
+          - { label: "Légende", name: "legend", widget: "string" }
