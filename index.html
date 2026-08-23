@@ -19,7 +19,7 @@
             background: #e9ecef;
         }
 
-        /* ===== COLONNE GAUCHE (VILLAGES) - largeur fixe ===== */
+        /* ===== COLONNE GAUCHE (VILLAGES) ===== */
         #sidebar {
             width: 280px;
             background: #1e2a3a;
@@ -28,6 +28,8 @@
             overflow-y: auto;
             flex-shrink: 0;
             border-right: 3px solid #0d6efd;
+            display: flex;
+            flex-direction: column;
         }
         #sidebar h2 {
             text-align: center;
@@ -39,6 +41,8 @@
         }
         #sidebar ul {
             list-style: none;
+            flex: 1;
+            overflow-y: auto;
         }
         #sidebar li {
             padding: 10px 12px;
@@ -57,6 +61,24 @@
             background: #0d6efd;
             font-weight: bold;
             border-left-color: #fff;
+        }
+        /* Lien vers l'administration */
+        #admin-link {
+            margin-top: 15px;
+            padding: 12px;
+            background: #0d6efd;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+            border: none;
+            display: block;
+        }
+        #admin-link:hover {
+            background: #0b5ed7;
+            transform: scale(1.02);
         }
 
         /* ===== COLONNE DROITE (CONTENU) ===== */
@@ -84,7 +106,6 @@
             justify-content: flex-start;
         }
 
-        /* Chaque carte postale fait EXACTEMENT 160px × 226px (ratio A6) */
         .card-item {
             width: 160px;
             background: #ffffff;
@@ -100,7 +121,6 @@
             transform: translateY(-6px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
         }
-
         .card-item img {
             width: 160px;
             height: 226px;
@@ -109,7 +129,6 @@
             display: block;
             border-bottom: 1px solid #eee;
         }
-
         .card-item figcaption {
             padding: 10px 6px;
             font-size: 0.82rem;
@@ -125,7 +144,6 @@
             word-break: break-word;
         }
 
-        /* Message "aucune carte" */
         .empty-message {
             width: 100%;
             text-align: center;
@@ -139,7 +157,7 @@
             border: 2px dashed #dee2e6;
         }
 
-        /* ===== MODALE (AFFICHAGE A6 EN GRAND) ===== */
+        /* ===== MODALE ===== */
         #modal {
             display: none;
             position: fixed;
@@ -153,7 +171,6 @@
             z-index: 9999;
             backdrop-filter: blur(4px);
         }
-
         #modal-content {
             width: 600px;
             height: 848px;
@@ -168,7 +185,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
         }
-
         #modal-content img {
             width: 100%;
             height: calc(100% - 70px);
@@ -177,7 +193,6 @@
             border-radius: 6px;
             border: 1px solid #ddd;
         }
-
         #modal-content .modal-legend {
             margin-top: 14px;
             font-size: 1.2rem;
@@ -187,7 +202,6 @@
             max-width: 90%;
             font-style: italic;
         }
-
         #modal-close {
             margin-top: 12px;
             padding: 10px 40px;
@@ -219,7 +233,6 @@
                 font-size: 1rem;
             }
         }
-
         @media (max-width: 650px) {
             body {
                 flex-direction: column;
@@ -246,6 +259,8 @@
     <div id="sidebar">
         <h2>🏘️ Villages</h2>
         <ul id="village-list"></ul>
+        <!-- LIEN VERS L'ADMINISTRATION -->
+        <a id="admin-link" href="/admin/">⚙️ Administration</a>
     </div>
 
     <!-- CONTENU DROIT -->
@@ -265,9 +280,10 @@
 
     <script>
         // ==============================================================
-        // 1. LISTE COMPLÈTE DES 441 COMMUNES (intégrée depuis votre CSV)
+        // 1. LISTE DES VILLAGES (pour la colonne de gauche)
+        //    Vous pouvez ajouter vos nouveaux villages ici (ex: "Test")
         // ==============================================================
-        const allVillageNames = [
+        const villageNames = [
             "Ageville", "Aigremont", "Aillianville", "Aingoulaincourt", "Aizanville",
             "Allichamps", "Ambonville", "Andelot-Blancheville", "Andilly-en-Bassigny",
             "Annonville", "Annéville-la-Prairie", "Anrosey", "Aprey", "Arbigny-sous-Varennes",
@@ -370,43 +386,12 @@
             "Villiers-sur-Suize", "Violot", "Vitry-en-Montagne",
             "Vitry-lès-Nogent", "Vivey", "Voillecomte", "Voisey",
             "Voisines", "Voncourt", "Vouécourt", "Vraincourt",
-            "Vroncourt-la-Côte", "Wassy"
+            "Vroncourt-la-Côte", "Wassy",
+            "Test"  // <- J'ai AJOUTÉ "Test" ici pour qu'il apparaisse dans la liste
         ];
 
         // ==============================================================
-        // 2. CARTES D'EXEMPLE (pour 4 villages tests)
-        // ==============================================================
-        const defaultCardsMap = {
-            "Langres": [
-                { "src": "https://via.placeholder.com/400x566/1abc9c/fff?text=Langres+-+Porte+des+Moulins", "legend": "Porte des Moulins, début XXe" },
-                { "src": "https://via.placeholder.com/400x566/3498db/fff?text=Langres+-+Cathédrale", "legend": "Cathédrale Saint-Mammès" }
-            ],
-            "Chaumont": [
-                { "src": "https://via.placeholder.com/400x566/e74c3c/fff?text=Chaumont+-+Viaduc", "legend": "Le Viaduc de Chaumont" },
-                { "src": "https://via.placeholder.com/400x566/f39c12/fff?text=Chaumont+-+Place+Crèvecoeur", "legend": "Place Crèvecoeur, années 1930" }
-            ],
-            "Joinville": [
-                { "src": "https://via.placeholder.com/400x566/9b59b6/fff?text=Joinville+-+Château", "legend": "Château du Grand Jardin" }
-            ],
-            "Saint-Dizier": [
-                { "src": "https://via.placeholder.com/400x566/34495e/fff?text=Saint-Dizier+-+Bassin", "legend": "Le bassin de la Marne" }
-            ]
-        };
-
-        // ==============================================================
-        // 3. CONSTRUCTION DE LA BASE DE DONNÉES FINALE
-        // ==============================================================
-        const data = {
-            "villages": allVillageNames.map(name => {
-                return {
-                    "name": name,
-                    "cards": defaultCardsMap[name] || []
-                };
-            })
-        };
-
-        // ==============================================================
-        // 4. RÉFÉRENCES DOM & LOGIQUE D'AFFICHAGE
+        // 2. RÉFÉRENCES DOM
         // ==============================================================
         const villageList = document.getElementById('village-list');
         const gallery = document.getElementById('gallery');
@@ -416,56 +401,81 @@
         const modalLegend = document.getElementById('modal-legend');
         const modalClose = document.getElementById('modal-close');
 
-        // Remplir la sidebar
-        data.villages.forEach(village => {
+        // ==============================================================
+        // 3. AFFICHAGE DE LA LISTE DES VILLAGES DANS LA SIDEBAR
+        // ==============================================================
+        villageNames.forEach(name => {
             const li = document.createElement('li');
-            li.textContent = village.name;
-            li.dataset.village = village.name;
-            li.addEventListener('click', () => loadVillage(village.name));
+            li.textContent = name;
+            li.dataset.village = name;
+            li.addEventListener('click', () => loadVillage(name));
             villageList.appendChild(li);
         });
 
-        // Chargement d'un village
-        function loadVillage(villageName) {
+        // ==============================================================
+        // 4. CHARGEMENT DES CARTES D'UN VILLAGE (depuis les fichiers JSON)
+        // ==============================================================
+        async function loadVillage(villageName) {
+            // Met à jour le titre
             selectedTitle.textContent = `📮 Cartes de ${villageName}`;
 
+            // Surbrillance du village actif
             document.querySelectorAll('#village-list li').forEach(el => el.classList.remove('active'));
             document.querySelector(`#village-list li[data-village="${villageName}"]`)?.classList.add('active');
 
-            const village = data.villages.find(v => v.name === villageName);
-            if (!village) return;
-
+            // Vide la galerie
             gallery.innerHTML = '';
 
-            // Si le village n'a pas de cartes
-            if (village.cards.length === 0) {
-                gallery.innerHTML = `<div class="empty-message">📭 Aucune carte postale pour ce village pour le moment.</div>`;
-                return;
+            try {
+                // 1. On essaye de charger le fichier JSON du village
+                //    Le nom du fichier doit être en minuscules et sans accents
+                const fileName = villageName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const response = await fetch(`data/villages/${fileName}.json`);
+
+                if (!response.ok) {
+                    // Si le fichier n'existe pas (404) -> message "aucune carte"
+                    gallery.innerHTML = `<div class="empty-message">📭 Aucune carte postale pour ce village pour le moment.</div>`;
+                    return;
+                }
+
+                const data = await response.json();
+                const cards = data.cards || [];
+
+                if (cards.length === 0) {
+                    gallery.innerHTML = `<div class="empty-message">📭 Aucune carte postale pour ce village pour le moment.</div>`;
+                    return;
+                }
+
+                // 2. Génère les vignettes
+                cards.forEach(card => {
+                    const figure = document.createElement('figure');
+                    figure.className = 'card-item';
+
+                    const img = document.createElement('img');
+                    img.src = card.image || 'https://via.placeholder.com/160x226/cccccc/fff?text=Image+manquante';
+                    img.alt = card.legend || 'Carte postale';
+                    img.loading = 'lazy';
+
+                    const figcap = document.createElement('figcaption');
+                    figcap.textContent = card.legend || 'Légende manquante';
+
+                    figure.appendChild(img);
+                    figure.appendChild(figcap);
+
+                    figure.addEventListener('click', () => openModal(img.src, figcap.textContent));
+
+                    gallery.appendChild(figure);
+                });
+
+            } catch (error) {
+                console.error('Erreur de chargement :', error);
+                gallery.innerHTML = `<div class="empty-message">❌ Erreur lors du chargement des données.</div>`;
             }
-
-            // Génère les vignettes
-            village.cards.forEach(card => {
-                const figure = document.createElement('figure');
-                figure.className = 'card-item';
-
-                const img = document.createElement('img');
-                img.src = card.src;
-                img.alt = card.legend;
-                img.loading = 'lazy';
-
-                const figcap = document.createElement('figcaption');
-                figcap.textContent = card.legend;
-
-                figure.appendChild(img);
-                figure.appendChild(figcap);
-
-                figure.addEventListener('click', () => openModal(card.src, card.legend));
-
-                gallery.appendChild(figure);
-            });
         }
 
-        // Modale
+        // ==============================================================
+        // 5. MODALE (agrandissement)
+        // ==============================================================
         function openModal(src, legend) {
             modalImage.src = src;
             modalLegend.textContent = legend;
@@ -486,9 +496,11 @@
             if (e.key === 'Escape') closeModal();
         });
 
-        // Chargement par défaut (premier village : Ageville)
-        if (data.villages.length > 0) {
-            loadVillage(data.villages[0].name);
+        // ==============================================================
+        // 6. CHARGEMENT PAR DÉFAUT (premier village : Ageville)
+        // ==============================================================
+        if (villageNames.length > 0) {
+            loadVillage(villageNames[0]);
         }
     </script>
 </body>
