@@ -9,6 +9,7 @@ collections:
   - name: "villages"
     label: "Villages"
     folder: "data/villages"
+    format: json          # <-- C'EST CETTE LIGNE QUI ÉTAIT MANQUANTE !
     create: true
     slug: "{{slug}}"
     fields:
